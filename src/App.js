@@ -9,6 +9,8 @@ import Cart from './pages/Cart';
 import Contact from './pages/Contact';
 import { CartProvider } from './context/CartContext';
 
+
+
 function ScrollToTop() {
   const { pathname } = useLocation();
   useEffect(() => {
@@ -30,6 +32,7 @@ function App() {
               <Route path="/collection" element={<Collection />} />
               <Route path="/cart" element={<Cart />} />
               <Route path="/contact" element={<Contact />} />
+         
               {/* Fallback for other routes */}
               <Route path="*" element={<Home />} />
             </Routes>

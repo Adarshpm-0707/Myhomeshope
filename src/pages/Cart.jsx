@@ -1,11 +1,53 @@
 import React, { useState } from 'react';
 import { useCart } from '../context/CartContext';
-import { Trash2, Minus, Plus, ShoppingBag, ArrowRight, MapPin, Phone, User, Mail, CreditCard, ChevronLeft } from 'lucide-react';
+import { Trash2, Minus, Plus, ShoppingBag, ArrowRight, MapPin, Phone, User, Mail, CreditCard, ChevronLeft, CheckCircle2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function Cart() {
   const { cart, removeFromCart, updateQuantity, cartTotal, clearCart } = useCart();
-  const [step, setStep] = useState(0); // 0: Cart, 1: Checkout Form
+  const [step, setStep] = useState(0); // 0: Cart, 1: Checkout Form, 2: Success
+  const [customer, setCustomer] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    address: '',
+  });
+
+  const handleCustomerChange = (event) => {
+    const { name, value } = event.target;
+    setCustomer((current) => ({ ...current, [name]: value }));
+  };
+
+  const handlePlaceOrder = (event) => {
+    event.preventDefault();
+    setStep(2);
+    clearCart();
+  };
+
+  if (step === 2) {
+    return (
+      <div className="pt-32 pb-20 px-4 text-center min-h-screen flex flex-col items-center justify-center">
+        <div className="w-24 h-24 bg-green-50 rounded-full flex items-center justify-center mb-6 border border-green-100">
+          <CheckCircle2 size={46} className="text-green-600" />
+        </div>
+        <p className="text-brand-brown font-bold text-[10px] md:text-xs uppercase tracking-[0.3em] mb-3">
+          Order Confirmed
+        </p>
+        <h2 className="font-serif text-3xl md:text-5xl text-brand-text font-bold mb-4">
+          Successfully booked your order
+        </h2>
+        <p className="text-brand-muted mb-8 max-w-md mx-auto leading-relaxed">
+          Thank you, {customer.name || 'customer'}. We will contact you soon and deliver your order to the address you provided.
+        </p>
+        <Link
+          to="/collection"
+          className="btn-3d bg-brand-brown text-white px-8 py-3 rounded-full font-semibold flex items-center gap-2"
+        >
+          Continue Shopping <ArrowRight size={18} />
+        </Link>
+      </div>
+    );
+  }
 
   if (cart.length === 0) {
     return (
@@ -39,6 +81,11 @@ export default function Cart() {
         <div className={`flex items-center gap-2 ${step >= 1 ? 'text-brand-brown' : 'text-brand-muted'}`}>
           <span className={`w-6 h-6 md:w-8 md:h-8 rounded-full flex items-center justify-center text-xs md:font-bold border-2 ${step >= 1 ? 'border-brand-brown bg-brand-brown text-white' : 'border-brand-beige text-brand-muted'}`}>2</span>
           <span className="text-[10px] md:text-xs font-bold uppercase tracking-widest">Shipping</span>
+        </div>
+        <div className="h-px w-6 md:w-8 bg-brand-beige" />
+        <div className={`flex items-center gap-2 ${step >= 2 ? 'text-brand-brown' : 'text-brand-muted'}`}>
+          <span className={`w-6 h-6 md:w-8 md:h-8 rounded-full flex items-center justify-center text-xs md:font-bold border-2 ${step >= 2 ? 'border-brand-brown bg-brand-brown text-white' : 'border-brand-beige text-brand-muted'}`}>3</span>
+          <span className="text-[10px] md:text-xs font-bold uppercase tracking-widest">Done</span>
         </div>
       </div>
 
@@ -173,20 +220,36 @@ export default function Cart() {
                 Shipping <span className="text-brand-brown">Details</span>
               </h1>
               
-              <form className="space-y-4 md:space-y-6 mt-6 md:mt-8">
+              <form onSubmit={handlePlaceOrder} className="space-y-4 md:space-y-6 mt-6 md:mt-8">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                   <div className="space-y-2">
                     <label className="text-[10px] font-bold text-brand-muted uppercase tracking-widest ml-1">Full Name</label>
                     <div className="relative">
                       <User className="absolute left-4 top-1/2 -translate-y-1/2 text-brand-brown/40" size={18} />
-                      <input type="text" placeholder="John Doe" className="w-full pl-12 pr-4 py-3.5 md:py-4 rounded-xl md:rounded-2xl border border-brand-beige focus:outline-none focus:ring-2 focus:ring-brand-brown/20 bg-white" />
+                      <input
+                        type="text"
+                        name="name"
+                        value={customer.name}
+                        onChange={handleCustomerChange}
+                        placeholder="John Doe"
+                        required
+                        className="w-full pl-12 pr-4 py-3.5 md:py-4 rounded-xl md:rounded-2xl border border-brand-beige focus:outline-none focus:ring-2 focus:ring-brand-brown/20 bg-white"
+                      />
                     </div>
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] font-bold text-brand-muted uppercase tracking-widest ml-1">Email Address</label>
                     <div className="relative">
                       <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-brand-brown/40" size={18} />
-                      <input type="email" placeholder="john@example.com" className="w-full pl-12 pr-4 py-3.5 md:py-4 rounded-xl md:rounded-2xl border border-brand-beige focus:outline-none focus:ring-2 focus:ring-brand-brown/20 bg-white" />
+                      <input
+                        type="email"
+                        name="email"
+                        value={customer.email}
+                        onChange={handleCustomerChange}
+                        placeholder="john@example.com"
+                        required
+                        className="w-full pl-12 pr-4 py-3.5 md:py-4 rounded-xl md:rounded-2xl border border-brand-beige focus:outline-none focus:ring-2 focus:ring-brand-brown/20 bg-white"
+                      />
                     </div>
                   </div>
                 </div>
@@ -195,7 +258,15 @@ export default function Cart() {
                   <label className="text-[10px] font-bold text-brand-muted uppercase tracking-widest ml-1">Phone Number</label>
                   <div className="relative">
                     <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-brand-brown/40" size={18} />
-                    <input type="tel" placeholder="+91 00000 00000" className="w-full pl-12 pr-4 py-3.5 md:py-4 rounded-xl md:rounded-2xl border border-brand-beige focus:outline-none focus:ring-2 focus:ring-brand-brown/20 bg-white" />
+                    <input
+                      type="tel"
+                      name="phone"
+                      value={customer.phone}
+                      onChange={handleCustomerChange}
+                      placeholder="+91 00000 00000"
+                      required
+                      className="w-full pl-12 pr-4 py-3.5 md:py-4 rounded-xl md:rounded-2xl border border-brand-beige focus:outline-none focus:ring-2 focus:ring-brand-brown/20 bg-white"
+                    />
                   </div>
                 </div>
 
@@ -203,21 +274,24 @@ export default function Cart() {
                   <label className="text-[10px] font-bold text-brand-muted uppercase tracking-widest ml-1">Shipping Address</label>
                   <div className="relative">
                     <MapPin className="absolute left-4 top-3 md:top-4 text-brand-brown/40" size={18} />
-                    <textarea rows="3" placeholder="123 Luxury Ave, Design District..." className="w-full pl-12 pr-4 py-3.5 md:py-4 rounded-xl md:rounded-2xl border border-brand-beige focus:outline-none focus:ring-2 focus:ring-brand-brown/20 bg-white"></textarea>
+                    <textarea
+                      rows="3"
+                      name="address"
+                      value={customer.address}
+                      onChange={handleCustomerChange}
+                      placeholder="House number, street, city, state, pincode"
+                      required
+                      className="w-full pl-12 pr-4 py-3.5 md:py-4 rounded-xl md:rounded-2xl border border-brand-beige focus:outline-none focus:ring-2 focus:ring-brand-brown/20 bg-white"
+                    />
                   </div>
                 </div>
 
                 <div className="pt-4 pb-8 lg:pb-0">
                   <button 
-                    type="button"
-                    onClick={() => {
-                      alert('Order Placed Successfully!');
-                      clearCart();
-                      window.location.href = '/';
-                    }}
+                    type="submit"
                     className="btn-3d w-full bg-brand-brown text-white py-4 md:py-5 rounded-2xl font-bold flex items-center justify-center gap-3 shadow-xl hover:shadow-brand-brown/40 text-base md:text-lg"
                   >
-                    Complete Order & Pay <CreditCard size={22} />
+                    Place Order <CreditCard size={22} />
                   </button>
                 </div>
               </form>

@@ -84,13 +84,24 @@ function LatestFurnitures() {
   ];
 
   const products = [
+    { id: 7, name: 'Console Cabinet', price: 6800, category: 'Home', image: 'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=400&q=80' },
+    { id: 8, name: 'Office Desk', price: 7800, category: 'Office', image: 'https://images.unsplash.com/photo-1518455027359-f3f8164ba6bd?w=400&q=80' },
+    { id: 9, name: 'Work Chair', price: 5200, category: 'Office', image: 'https://images.unsplash.com/photo-1580480055273-228ff5388ef8?w=400&q=80' },
+    { id: 10, name: 'Sliding Wardrobe', price: 18900, category: 'Wardrobe', image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&q=80' },
+    { id: 11, name: 'Tall Wardrobe', price: 16400, category: 'Wardrobe', image: 'https://images.unsplash.com/photo-1595428774223-ef52624120d2?w=400&q=80' },
+    { id: 12, name: 'Storage Shelf', price: 3600, category: 'Storage', image: 'https://images.unsplash.com/photo-1594026112284-02bb6f3352fe?w=400&q=80' },
+    { id: 13, name: 'Drawer Unit', price: 4200, category: 'Storage', image: 'https://images.unsplash.com/photo-1611486212355-d276af4581c0?w=400&q=80' },
     { id: 1, name: 'Wooden Stool', price: 1200, category: 'Chair', image: 'https://images.unsplash.com/photo-1506439773649-6e0eb8cfb237?w=400&q=80' },
     { id: 2, name: 'Grey Armchair', price: 4500, category: 'Chair', image: 'https://images.unsplash.com/photo-1592078615290-033ee584e267?w=400&q=80' },
     { id: 3, name: 'Bedside Table', price: 2500, category: 'Table', image: 'https://images.unsplash.com/photo-1616047006789-b7af5afb8c20?w=400&q=80' },
     { id: 4, name: 'Light Chair', price: 2100, category: 'Chair', image: 'https://images.unsplash.com/photo-1567538096630-e0c55bd6374c?w=400&q=80' },
     { id: 5, name: 'Table Lamp', price: 1200, category: 'Home', image: 'https://images.unsplash.com/photo-1507473885765-e6ed057f782c?w=400&q=80' },
     { id: 6, name: 'Soft Desk', price: 3000, category: 'Table', image: 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400&q=80' },
+    { id: 14, name: 'Cloud Sofa', price: 28500, category: 'Sofa', image: 'https://images.unsplash.com/photo-1540574163026-643ea20ade25?w=400&q=80' },
+    { id: 15, name: 'Compact Sofa', price: 19800, category: 'Sofa', image: 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400&q=80' },
   ];
+
+  const filteredProducts = products.filter((p) => p.category === activeCat);
 
   return (
     <section ref={ref} className="max-w-7xl mx-auto px-4 md:px-8 py-12 md:py-24">
@@ -121,7 +132,7 @@ function LatestFurnitures() {
 
         {/* Product Grid - 2 columns on mobile */}
         <div className="flex-1 grid grid-cols-2 md:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-10">
-          {products.map((p) => (
+          {filteredProducts.map((p) => (
             <div 
               key={p.id} 
               onClick={() => { addToCart(p); navigate('/cart'); }}

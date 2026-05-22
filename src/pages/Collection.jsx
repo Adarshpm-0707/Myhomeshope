@@ -1,71 +1,170 @@
-import React, { useState, useEffect } from 'react';
-import { collection, getDocs, addDoc, query, orderBy } from 'firebase/firestore';
+import React, { useState, useEffect, useMemo } from 'react';
+import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import ProductCard from '../components/ProductCard';
 import { Search, SlidersHorizontal } from 'lucide-react';
 
-const SAMPLE_PRODUCTS = [
-  { name: 'Velvet Royal Sofa', price: 1299, category: 'Living Room', image: 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&q=80&w=1000', isNew: true },
-  { name: 'Minimalist Oak Chair', price: 245, category: 'Dining', image: 'https://images.unsplash.com/photo-1592078615290-033ee584e267?auto=format&fit=crop&q=80&w=1000', isNew: false },
-  { name: 'Marbled Coffee Table', price: 450, category: 'Living Room', image: 'https://images.unsplash.com/photo-1533090161767-e6ffed986c88?auto=format&fit=crop&q=80&w=1000', isNew: true },
-  { name: 'Geometric Floor Lamp', price: 180, category: 'Lighting', image: 'https://images.unsplash.com/photo-1507473885765-e6ed057f782c?auto=format&fit=crop&q=80&w=1000', isNew: false },
-  { name: 'Golden Accent Mirror', price: 320, category: 'Decor', image: 'https://images.unsplash.com/photo-1618220179428-22790b461013?auto=format&fit=crop&q=80&w=1000', isNew: true },
-  { name: 'Bohemian Area Rug', price: 580, category: 'Textiles', image: 'https://images.unsplash.com/photo-1575414003591-ece8d0416c7a?auto=format&fit=crop&q=80&w=1000', isNew: false },
+const PRODUCTS_CACHE_KEY = 'collection-products-cache';
+const FETCH_TIMEOUT_MS = 2500;
+
+const fallbackProducts = [
+  {
+    id: 'sample-sofa',
+    name: 'Modern Linen Sofa',
+    price: 24999,
+    category: 'Living Room',
+    description: 'A relaxed three-seat sofa with soft linen texture and deep cushions.',
+    image: 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=500&q=80',
+    rating: 4.8,
+    isNew: true,
+  },
+  {
+    id: 'sample-dining',
+    name: 'Oak Dining Set',
+    price: 32999,
+    category: 'Dining',
+    description: 'Warm oak dining table made for everyday meals and easy hosting.',
+    image: 'https://images.unsplash.com/photo-1617806118233-18e1de247200?w=500&q=80',
+    rating: 4.7,
+  },
+  {
+    id: 'sample-lamp',
+    name: 'Table Lamp',
+    price: 1899,
+    category: 'Lighting',
+    description: 'Soft ambient lighting with a compact ceramic base.',
+    image: 'https://images.unsplash.com/photo-1507473885765-e6ed057f782c?w=500&q=80',
+    rating: 4.6,
+  },
+  {
+    id: 'sample-vase',
+    name: 'Decor Vase',
+    price: 1299,
+    category: 'Decor',
+    description: 'Minimal statement vase for shelves, consoles, and tabletops.',
+    image: 'https://images.unsplash.com/photo-1612196808214-b8e1d6145a8c?w=500&q=80',
+    rating: 4.5,
+  },
+  {
+    id: 'sample-cushion',
+    name: 'Woven Cushion',
+    price: 799,
+    category: 'Textiles',
+    description: 'Textured cushion cover with a calm neutral finish.',
+    image: 'https://images.unsplash.com/photo-1584100936595-c0654b55a2e2?w=500&q=80',
+    rating: 4.4,
+  },
+  {
+    id: 'sample-chair',
+    name: 'Accent Armchair',
+    price: 8999,
+    category: 'Living Room',
+    description: 'A compact accent chair with curved arms and supportive padding.',
+    image: 'https://images.unsplash.com/photo-1592078615290-033ee584e267?w=500&q=80',
+    rating: 4.9,
+    isNew: true,
+  },
+  {
+    id: 'sample-pendant',
+    name: 'Pendant Light',
+    price: 3499,
+    category: 'Lighting',
+    description: 'A warm hanging light for dining spaces and reading corners.',
+    image: 'https://images.unsplash.com/photo-1524484485831-a92ffc0de03f?w=500&q=80',
+    rating: 4.6,
+  },
+  {
+    id: 'sample-rug',
+    name: 'Cotton Area Rug',
+    price: 4599,
+    category: 'Textiles',
+    description: 'Soft cotton rug with a durable flat-weave finish.',
+    image: 'https://images.unsplash.com/photo-1600166898405-da9535204843?w=500&q=80',
+    rating: 4.3,
+  },
 ];
 
+const getCachedProducts = () => {
+  try {
+    const cached = localStorage.getItem(PRODUCTS_CACHE_KEY);
+    return cached ? JSON.parse(cached) : null;
+  } catch (error) {
+    return null;
+  }
+};
+
+const withTimeout = (promise) =>
+  Promise.race([
+    promise,
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Product request timed out')), FETCH_TIMEOUT_MS)
+    ),
+  ]);
+
 export default function Collection() {
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [products, setProducts] = useState(() => getCachedProducts() || fallbackProducts);
+  const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState('All');
+  const [searchTerm, setSearchTerm] = useState('');
   const categories = ['All', 'Living Room', 'Dining', 'Lighting', 'Decor', 'Textiles'];
 
   useEffect(() => {
+    let isMounted = true;
+
+    const fetchProducts = async () => {
+      const firebaseOptions = db.app?.options;
+      const hasFirebaseConfig =
+        firebaseOptions?.apiKey &&
+        firebaseOptions.apiKey !== 'YOUR_API_KEY' &&
+        firebaseOptions.projectId &&
+        firebaseOptions.projectId !== 'YOUR_PROJECT_ID';
+
+      if (!hasFirebaseConfig) {
+        return;
+      }
+
+      setLoading(true);
+      try {
+        const q = query(collection(db, 'products'), orderBy('name'));
+        const querySnapshot = await withTimeout(getDocs(q));
+        const fetchedProducts = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+
+        if (isMounted && fetchedProducts.length > 0) {
+          setProducts(fetchedProducts);
+          localStorage.setItem(PRODUCTS_CACHE_KEY, JSON.stringify(fetchedProducts));
+        }
+      } catch (error) {
+        console.warn("Using local products because Firebase products could not be loaded: ", error);
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
     fetchProducts();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
-  const fetchProducts = async () => {
-    try {
-      const q = query(collection(db, 'products'), orderBy('name'));
-      const querySnapshot = await getDocs(q);
-      const fetchedProducts = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
+  const filteredProducts = useMemo(() => {
+    const normalizedSearch = searchTerm.trim().toLowerCase();
 
-      if (fetchedProducts.length === 0) {
-        // If DB is empty, show sample products and offer to seed
-        setProducts(SAMPLE_PRODUCTS.map((p, i) => ({ ...p, id: `sample-${i}` })));
-      } else {
-        setProducts(fetchedProducts);
-      }
-    } catch (error) {
-      console.error("Error fetching products: ", error);
-      // Fallback to sample data for preview
-      setProducts(SAMPLE_PRODUCTS.map((p, i) => ({ ...p, id: `sample-${i}` })));
-    } finally {
-      setLoading(false);
-    }
-  };
+    return products.filter((product) => {
+      const matchesCategory = filter === 'All' || product.category === filter;
+      const matchesSearch =
+        !normalizedSearch ||
+        product.name?.toLowerCase().includes(normalizedSearch) ||
+        product.description?.toLowerCase().includes(normalizedSearch);
 
-  const seedData = async () => {
-    try {
-      setLoading(true);
-      for (const product of SAMPLE_PRODUCTS) {
-        await addDoc(collection(db, 'products'), product);
-      }
-      fetchProducts();
-      alert('Sample products added to your Firebase!');
-    } catch (error) {
-      console.error("Error seeding data: ", error);
-      alert('Failed to seed data. Make sure your Firebase config is correct and Firestore is enabled.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const filteredProducts = filter === 'All' 
-    ? products 
-    : products.filter(p => p.category === filter);
+      return matchesCategory && matchesSearch;
+    });
+  }, [filter, products, searchTerm]);
 
   return (
     <div className="pt-24 md:pt-32 pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto min-h-screen">
@@ -79,15 +178,6 @@ export default function Collection() {
           <p className="text-brand-muted text-sm md:text-lg leading-relaxed">
             Explore our curated selection of premium furniture and home decor designed to elevate your living space.
           </p>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <button 
-            onClick={seedData}
-            className="text-[10px] md:text-xs font-bold text-brand-brown border-b-2 border-brand-brown/30 hover:border-brand-brown transition-all py-1 tracking-widest"
-          >
-            SEED SAMPLE DATA
-          </button>
         </div>
       </div>
 
@@ -115,6 +205,8 @@ export default function Collection() {
             <input
               type="text"
               placeholder="Search products..."
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
               className="w-full pl-12 pr-4 py-3 md:py-4 bg-white border border-brand-beige rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-brown/20 transition-all"
             />
           </div>
@@ -126,14 +218,14 @@ export default function Collection() {
       </div>
 
       {/* Grid */}
-      {loading ? (
-        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-10">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="aspect-[4/5] rounded-3xl product-shimmer" />
+      {loading && products.length === 0 ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+          {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+            <div key={i} className="aspect-[4/5] rounded-2xl md:rounded-3xl product-shimmer" />
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-10">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
           {filteredProducts.map((product) => (
             <ProductCard key={product.id} product={product} />
           ))}
@@ -151,3 +243,4 @@ export default function Collection() {
     </div>
   );
 }
+
