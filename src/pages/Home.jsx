@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
+import { homeProducts } from '../data/products';
 import { 
   Home as HomeIcon, 
   Briefcase, 
@@ -57,9 +58,7 @@ function Hero() {
           <h1 className="text-2xl sm:text-4xl md:text-6xl font-bold text-white max-w-4xl mb-6 md:mb-10 leading-tight drop-shadow-2xl">
             Elevating Homes with <br className="hidden sm:block" /> Modern, Elegant & Timeless Decor
           </h1>
-          <button className="bg-brand-brown hover:bg-brand-brown-dark text-white px-8 md:px-12 py-3 md:py-4 rounded-xl font-bold text-[10px] md:text-xs uppercase tracking-widest transition-all shadow-xl active:scale-95">
-            Learn More
-          </button>
+  
         </div>
       </div>
     </section>
@@ -83,25 +82,7 @@ function LatestFurnitures() {
     { name: 'Sofa', icon: Bed },
   ];
 
-  const products = [
-    { id: 7, name: 'Console Cabinet', price: 6800, category: 'Home', image: 'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=400&q=80' },
-    { id: 8, name: 'Office Desk', price: 7800, category: 'Office', image: 'https://images.unsplash.com/photo-1518455027359-f3f8164ba6bd?w=400&q=80' },
-    { id: 9, name: 'Work Chair', price: 5200, category: 'Office', image: 'https://images.unsplash.com/photo-1580480055273-228ff5388ef8?w=400&q=80' },
-    { id: 10, name: 'Sliding Wardrobe', price: 18900, category: 'Wardrobe', image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&q=80' },
-    { id: 11, name: 'Tall Wardrobe', price: 16400, category: 'Wardrobe', image: 'https://images.unsplash.com/photo-1595428774223-ef52624120d2?w=400&q=80' },
-    { id: 12, name: 'Storage Shelf', price: 3600, category: 'Storage', image: 'https://images.unsplash.com/photo-1594026112284-02bb6f3352fe?w=400&q=80' },
-    { id: 13, name: 'Drawer Unit', price: 4200, category: 'Storage', image: 'https://images.unsplash.com/photo-1611486212355-d276af4581c0?w=400&q=80' },
-    { id: 1, name: 'Wooden Stool', price: 1200, category: 'Chair', image: 'https://images.unsplash.com/photo-1506439773649-6e0eb8cfb237?w=400&q=80' },
-    { id: 2, name: 'Grey Armchair', price: 4500, category: 'Chair', image: 'https://images.unsplash.com/photo-1592078615290-033ee584e267?w=400&q=80' },
-    { id: 3, name: 'Bedside Table', price: 2500, category: 'Table', image: 'https://images.unsplash.com/photo-1616047006789-b7af5afb8c20?w=400&q=80' },
-    { id: 4, name: 'Light Chair', price: 2100, category: 'Chair', image: 'https://images.unsplash.com/photo-1567538096630-e0c55bd6374c?w=400&q=80' },
-    { id: 5, name: 'Table Lamp', price: 1200, category: 'Home', image: 'https://images.unsplash.com/photo-1507473885765-e6ed057f782c?w=400&q=80' },
-    { id: 6, name: 'Soft Desk', price: 3000, category: 'Table', image: 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400&q=80' },
-    { id: 14, name: 'Cloud Sofa', price: 28500, category: 'Sofa', image: 'https://images.unsplash.com/photo-1540574163026-643ea20ade25?w=400&q=80' },
-    { id: 15, name: 'Compact Sofa', price: 19800, category: 'Sofa', image: 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400&q=80' },
-  ];
-
-  const filteredProducts = products.filter((p) => p.category === activeCat);
+  const filteredProducts = homeProducts.filter((p) => p.category === activeCat);
 
   return (
     <section ref={ref} className="max-w-7xl mx-auto px-4 md:px-8 py-12 md:py-24">
@@ -135,22 +116,30 @@ function LatestFurnitures() {
           {filteredProducts.map((p) => (
             <div 
               key={p.id} 
-              onClick={() => { addToCart(p); navigate('/cart'); }}
+              onClick={() => navigate(`/product/${encodeURIComponent(p.id)}`, { state: { product: p } })}
               className="bg-white rounded-[1.5rem] md:rounded-[3rem] p-3 md:p-8 shadow-sm hover:shadow-2xl transition-all duration-500 group cursor-pointer border border-brand-beige flex flex-col h-full"
             >
-              <div className="aspect-square bg-brand-light rounded-[1.2rem] md:rounded-[2.5rem] overflow-hidden mb-4 md:mb-8 flex items-center justify-center p-4 md:p-12 relative">
-                <img src={p.image} alt={p.name} className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500" />
+              <div className="aspect-square bg-brand-light rounded-[1.2rem] md:rounded-[2.5rem] overflow-hidden mb-4 md:mb-8 flex items-center justify-center relative">
+                <img src={p.image} alt={p.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
               </div>
               <div className="px-1 md:px-2 flex-1 flex flex-col justify-between">
                 <div>
                   <h3 className="font-bold text-brand-text text-sm md:text-xl mb-1 md:mb-3 line-clamp-1">{p.name}</h3>
                   <p className="text-brand-muted text-[8px] md:text-xs mb-3 md:mb-6 leading-relaxed line-clamp-2">
-                    Premium quality furniture designed for your modern home sanctuary...
+                    {p.description}
                   </p>
                 </div>
                 <div className="flex items-center justify-between pt-3 md:pt-6 border-t border-brand-beige">
                   <span className="font-bold text-brand-text text-base md:text-2xl">₹{p.price}</span>
-                  <button className="w-8 h-8 md:w-12 md:h-12 bg-brand-light rounded-lg md:rounded-xl flex items-center justify-center text-brand-brown hover:bg-brand-brown hover:text-white transition-all active:scale-90">
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      addToCart(p);
+                    }}
+                    aria-label={`Add ${p.name} to cart`}
+                    className="w-8 h-8 md:w-12 md:h-12 bg-brand-light rounded-lg md:rounded-xl flex items-center justify-center text-brand-brown hover:bg-brand-brown hover:text-white transition-all active:scale-90"
+                  >
                     <Plus size={24} />
                   </button>
                 </div>
@@ -188,9 +177,7 @@ function FeatureSection() {
           <p className="text-brand-muted text-xs md:text-base mb-10 leading-relaxed italic border-l-4 border-brand-brown pl-4 text-left max-w-xl mx-auto lg:mx-0">
             Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident.
           </p>
-          <button className="bg-brand-brown hover:bg-brand-brown-dark text-white px-10 py-3.5 md:py-4 rounded-xl font-bold text-[10px] md:text-xs uppercase tracking-widest transition-all shadow-xl active:scale-95">
-            Learn More
-          </button>
+        
         </div>
       </div>
     </section>
@@ -227,9 +214,7 @@ function Testimonials() {
       </div>
 
       <div className={`relative transition-all duration-1000 delay-500 ${vis ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'}`}>
-        <div className="absolute -top-16 md:-top-32 left-0 hidden lg:block">
-           <img src="https://images.unsplash.com/photo-1581572803900-33bc9627607a?w=400&q=80" alt="Plant" className="w-32 md:w-56 h-auto object-contain" />
-        </div>
+      
         <img 
           src="https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e?w=1600&q=80" 
           alt="White Luxury Sofa" 

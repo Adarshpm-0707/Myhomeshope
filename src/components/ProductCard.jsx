@@ -2,15 +2,19 @@ import React from 'react';
 import { Plus, Star } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
+import fallbackImage from '../assets/IMG_COM_202605222120204410.webp';
 
 export default function ProductCard({ product }) {
   const { addToCart } = useCart();
   const navigate = useNavigate();
-  const fallbackImage = 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=500&q=80';
 
   const handleClick = () => {
+    navigate(`/product/${encodeURIComponent(product.id)}`, { state: { product } });
+  };
+
+  const handleAddToCart = (event) => {
+    event.stopPropagation();
     addToCart(product);
-    navigate('/cart');
   };
 
   return (
@@ -41,7 +45,7 @@ export default function ProductCard({ product }) {
         {/* Hover Overlay */}
         <div className="absolute inset-0 bg-brand-text/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-center justify-center">
           <div className="bg-white/90 backdrop-blur-sm text-brand-text px-4 md:px-6 py-2 md:py-3 rounded-xl font-bold text-[9px] md:text-[10px] uppercase tracking-[0.2em] translate-y-4 group-hover:translate-y-0 transition-all duration-500 shadow-2xl border border-white/50">
-            Add to Bag
+            View Details
           </div>
         </div>
       </div>
@@ -77,9 +81,14 @@ export default function ProductCard({ product }) {
               ₹{product.price}
             </p>
           </div>
-          <div className="w-8 h-8 md:w-10 md:h-10 bg-brand-light rounded-xl md:rounded-2xl flex items-center justify-center text-brand-brown group-hover:bg-brand-brown group-hover:text-white transition-all duration-300 shadow-sm">
+          <button
+            type="button"
+            onClick={handleAddToCart}
+            aria-label={`Add ${product.name} to cart`}
+            className="w-8 h-8 md:w-10 md:h-10 bg-brand-light rounded-xl md:rounded-2xl flex items-center justify-center text-brand-brown group-hover:bg-brand-brown group-hover:text-white transition-all duration-300 shadow-sm"
+          >
             <Plus size={16} />
-          </div>
+          </button>
         </div>
       </div>
     </div>

@@ -7,6 +7,7 @@ import Home from './pages/Home';
 import Collection from './pages/Collection';
 import Cart from './pages/Cart';
 import Contact from './pages/Contact';
+import ProductDetails from './pages/ProductDetails';
 import { CartProvider } from './context/CartContext';
 
 
@@ -30,6 +31,7 @@ function App() {
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/collection" element={<Collection />} />
+              <Route path="/product/:id" element={<ProductDetails />} />
               <Route path="/cart" element={<Cart />} />
               <Route path="/contact" element={<Contact />} />
          
@@ -45,4 +47,3 @@ function App() {
 }
 
 export default App;
-

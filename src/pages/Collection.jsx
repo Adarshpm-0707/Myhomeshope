@@ -3,91 +3,19 @@ import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import ProductCard from '../components/ProductCard';
 import { Search, SlidersHorizontal } from 'lucide-react';
+import {
+  PRODUCTS_CACHE_KEY,
+  PRODUCT_IMAGE_COUNT,
+  fallbackProducts,
+  mergeLocalProducts,
+} from '../data/products';
 
-const PRODUCTS_CACHE_KEY = 'collection-products-cache';
 const FETCH_TIMEOUT_MS = 2500;
-
-const fallbackProducts = [
-  {
-    id: 'sample-sofa',
-    name: 'Modern Linen Sofa',
-    price: 24999,
-    category: 'Living Room',
-    description: 'A relaxed three-seat sofa with soft linen texture and deep cushions.',
-    image: 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=500&q=80',
-    rating: 4.8,
-    isNew: true,
-  },
-  {
-    id: 'sample-dining',
-    name: 'Oak Dining Set',
-    price: 32999,
-    category: 'Dining',
-    description: 'Warm oak dining table made for everyday meals and easy hosting.',
-    image: 'https://images.unsplash.com/photo-1617806118233-18e1de247200?w=500&q=80',
-    rating: 4.7,
-  },
-  {
-    id: 'sample-lamp',
-    name: 'Table Lamp',
-    price: 1899,
-    category: 'Lighting',
-    description: 'Soft ambient lighting with a compact ceramic base.',
-    image: 'https://images.unsplash.com/photo-1507473885765-e6ed057f782c?w=500&q=80',
-    rating: 4.6,
-  },
-  {
-    id: 'sample-vase',
-    name: 'Decor Vase',
-    price: 1299,
-    category: 'Decor',
-    description: 'Minimal statement vase for shelves, consoles, and tabletops.',
-    image: 'https://images.unsplash.com/photo-1612196808214-b8e1d6145a8c?w=500&q=80',
-    rating: 4.5,
-  },
-  {
-    id: 'sample-cushion',
-    name: 'Woven Cushion',
-    price: 799,
-    category: 'Textiles',
-    description: 'Textured cushion cover with a calm neutral finish.',
-    image: 'https://images.unsplash.com/photo-1584100936595-c0654b55a2e2?w=500&q=80',
-    rating: 4.4,
-  },
-  {
-    id: 'sample-chair',
-    name: 'Accent Armchair',
-    price: 8999,
-    category: 'Living Room',
-    description: 'A compact accent chair with curved arms and supportive padding.',
-    image: 'https://images.unsplash.com/photo-1592078615290-033ee584e267?w=500&q=80',
-    rating: 4.9,
-    isNew: true,
-  },
-  {
-    id: 'sample-pendant',
-    name: 'Pendant Light',
-    price: 3499,
-    category: 'Lighting',
-    description: 'A warm hanging light for dining spaces and reading corners.',
-    image: 'https://images.unsplash.com/photo-1524484485831-a92ffc0de03f?w=500&q=80',
-    rating: 4.6,
-  },
-  {
-    id: 'sample-rug',
-    name: 'Cotton Area Rug',
-    price: 4599,
-    category: 'Textiles',
-    description: 'Soft cotton rug with a durable flat-weave finish.',
-    image: 'https://images.unsplash.com/photo-1600166898405-da9535204843?w=500&q=80',
-    rating: 4.3,
-  },
-];
 
 const getCachedProducts = () => {
   try {
     const cached = localStorage.getItem(PRODUCTS_CACHE_KEY);
-    return cached ? JSON.parse(cached) : null;
+    return cached ? mergeLocalProducts(JSON.parse(cached)) : null;
   } catch (error) {
     return null;
   }
@@ -106,7 +34,10 @@ export default function Collection() {
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
-  const categories = ['All', 'Living Room', 'Dining', 'Lighting', 'Decor', 'Textiles'];
+  const categories = useMemo(
+    () => ['All', ...new Set(products.map((product) => product.category).filter(Boolean))],
+    [products]
+  );
 
   useEffect(() => {
     let isMounted = true;
@@ -133,8 +64,9 @@ export default function Collection() {
         }));
 
         if (isMounted && fetchedProducts.length > 0) {
-          setProducts(fetchedProducts);
-          localStorage.setItem(PRODUCTS_CACHE_KEY, JSON.stringify(fetchedProducts));
+          const localImageProducts = mergeLocalProducts(fetchedProducts);
+          setProducts(localImageProducts);
+          localStorage.setItem(PRODUCTS_CACHE_KEY, JSON.stringify(localImageProducts));
         }
       } catch (error) {
         console.warn("Using local products because Firebase products could not be loaded: ", error);
@@ -176,7 +108,7 @@ export default function Collection() {
             The <span className="text-brand-brown">Collection</span>
           </h1>
           <p className="text-brand-muted text-sm md:text-lg leading-relaxed">
-            Explore our curated selection of premium furniture and home decor designed to elevate your living space.
+            Explore all {PRODUCT_IMAGE_COUNT} furniture and decor images from the assets folder.
           </p>
         </div>
       </div>
@@ -243,4 +175,3 @@ export default function Collection() {
     </div>
   );
 }
-
